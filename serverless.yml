@@ -1,0 +1,59 @@
+service: eventbridge-example
+
+package:
+  exclude:
+    - mfa.sh
+    - node_modules/**
+    - package.json
+    - __tests__/**
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: eu-west-2
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "events:PutEvents"
+      Resource:
+        Fn::GetAtt:
+          - EventBridge
+          - Arn
+
+functions:
+  service1:
+    handler: service1.handler
+  service2:
+    handler: src/service2.handler
+    events:
+      - eventBridge:
+          eventBus: event-bridge
+          pattern:
+            source:
+              - custom.service2_event
+
+resources:
+  Resources:
+    SqsQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: sqsQueue
+
+    EventBridge:
+      Type: AWS::Events::EventBus
+      Properties:
+        Name: event-bridge
+
+    EventBridgeRule:
+      Type: AWS::Events::Rule
+      Properties:
+        EventBusName: event-bridge
+        EventPattern:
+          source:
+            - custom.service2_event
+        Targets:
+          - Id: 1
+            Arn:
+              Fn::GetAtt:
+                - SqsQueue
+                - Arn
