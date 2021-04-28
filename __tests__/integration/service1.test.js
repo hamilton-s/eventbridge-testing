@@ -1,5 +1,6 @@
 const AWS = require("aws-sdk");
 require("dotenv").config();
+import { v4 as uuid } from "uuid";
 
 const profileArg = process.argv.filter((x) => x.startsWith("--profile="))[0];
 const profile = profileArg ? profileArg.split("=")[1] : "default";
@@ -36,6 +37,8 @@ AWS.config.region = region;
 
 const lambda = new AWS.Lambda();
 const sqs = new AWS.SQS();
+const eventBridge = new AWS.EventBridge();
+const s3 = new AWS.S3();
 
 /*
  * Extend jest with EventBridge specific assertions
@@ -72,23 +75,6 @@ expect.extend({
   },
 });
 
-beforeAll(() => {
-  // const sqsQueue = await sqs.createQueue();
-  // const queueUrl = AWS.getQueueUrl(sqsQueue);
-  // todo
-  // createQueue() https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/SQS.html#createQueue-property
-  // putRule() https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/EventBridge.html#putRule-property
-  // set queue URL
-});
-
-afterAll(() => {
-  // const queueUrl = AWS.getQueueUrl(sqsQueue);
-  // await sqs.purgeQueue(queueUrl);
-  // todo
-  // purgeQueue() https://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/SQS.html#purgeQueue-property
-  // record Queue URL...
-});
-
 describe("Integration Testing: Service 1", () => {
   it("service 1 emits an event to the correct EventBus when triggered", async () => {
     const event = {
@@ -123,36 +109,29 @@ describe("Integration Testing: Service 1", () => {
     await sqs.deleteMessage(deleteParams).promise();
   });
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-  // it("service 2 writes the correct data to S3 when correct event pushed to EventBridge", async () => {
-  //   await eventBridge
-  //     .putEvents({
-  //       Entries: [
-  //         {
-  //           EventBusName: "application-bridge-example",
-  //           Source: "custom.service2_event",
-  //           DetailType: "example",
-  //           Detail: '{"a": "b"}', // change this to be s3 compatible
-  //         },
-  //       ],
-  //     })
-  //     .promise();
-  //   await sleep(10000); // wait 10 seconds to allow event to pass (could be substituted for retries on getting the object)
-  //   const params = {
-  //     Bucket: bucketName,
-  //     Key: `${cpak}-${pak}/event.html`,
-  //   };
-  //   const obj = await s3.getObject(params).promise();
-  //   expect(obj.ContentType).toBe("text/html; charset=utf-8");
-  // });
+  it("service 2 writes the correct data to S3 when correct event pushed to EventBridge", async () => {
+    const filename = `html-file-${uuid()}`;
+    await eventBridge
+      .putEvents({
+        Entries: [
+          {
+            EventBusName: "event-bridge",
+            Source: "custom.service2_event",
+            DetailType: "example",
+            Detail: JSON.stringify({ filename: filename }),
+          },
+        ],
+      })
+      .promise();
+    await sleep(5000); // wait 10 seconds to allow event to pass (could be substituted for retries on getting the object)
+    const params = {
+      Bucket: "sarah-dev-thumbnail-bucket",
+      Key: filename,
+    };
+    const obj = await s3.getObject(params).promise();
+    expect(obj.ContentType).toBe("application/octet-stream");
+  });
   // it.skip("e2e - service 2 writes correct value to DDB when service 1 triggered", async () => {
-  //   // todo
+  // todo
   // });
 });
-
-/*
-To Dos:
-- Construct SQS Queue
-- Add new rule for all sources to go the SQS queue
-- Poll the queue to make the assertion
-- Write to DDB or S3 in Service2 function to allow E2E assertion.
-*/
