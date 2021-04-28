@@ -14,20 +14,27 @@ provider:
   iamRoleStatements:
     - Effect: "Allow"
       Action:
-        - "events:PutEvents"
+        - "events:*"
       Resource:
         Fn::GetAtt:
           - EventBridge
           - Arn
+    - Effect: "Allow"
+      Action:
+        - "s3:*"
+      Resource:
+        - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:eventbridge-example-dev-service2
+        - arn:aws:s3:::sarah-dev-thumbnail-bucket/*
 
 functions:
   service1:
     handler: service1.handler
   service2:
-    handler: src/service2.handler
+    handler: service2.handler
+    role: EventRole
     events:
       - eventBridge:
-          eventBus: event-bridge
+          eventBus: arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/event-bridge
           pattern:
             source:
               - custom.service2_event
@@ -57,3 +64,30 @@ resources:
               Fn::GetAtt:
                 - SqsQueue
                 - Arn
+          - Id: 2
+            Arn:
+              Fn::GetAtt: [Service2LambdaFunction, Arn]
+
+    S3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: sarah-dev-thumbnail-bucket
+
+    EventRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        RoleName: "EventRole"
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Service:
+                  - "lambda.amazonaws.com"
+                  - "s3.amazonaws.com"
+                  - "events.amazonaws.com"
+              Action:
+                - "sts:AssumeRole"
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+          - arn:aws:iam::aws:policy/AmazonS3FullAccess
