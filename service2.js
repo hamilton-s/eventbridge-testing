@@ -8,22 +8,14 @@ module.exports.handler = async (ctx, event) => {
   const fileContent = fs.readFileSync(filename);
 
   const params = {
-    Bucket: "sarah-dev-thumbnail-bucket",
+    Bucket: "example-dev-thumbnail-bucket",
     Key: ctx.detail.filename, // File name you want to save as in S3 lol
     Body: fileContent,
   };
 
-  const result = await s3.putObject(params).promise();
-
-  return {
-    statusCode: 200,
-    body: JSON.stringify(
-      {
-        message: "Service 2 Success",
-        input: event,
-      },
-      null,
-      2
-    ),
-  };
+  try {
+    await s3.putObject(params).promise();
+  } catch (error) {
+    console.error(error);
+  }
 };
