@@ -74,23 +74,26 @@ expect.extend({
     }
   },
 });
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-describe("Integration Testing: Service 1", () => {
+const filename = `html-file-${uuid()}`;
+
+describe("Integration Testing Event Bridge", () => {
   it("service 1 emits an event to the correct EventBus when triggered", async () => {
     const event = {
       body: JSON.stringify({
-        id: "123",
+        filename: filename,
       }),
     };
 
-    // INVOKE
+    // Invoke Lambda Function
     const params = {
       FunctionName: "eventbridge-example-dev-service1",
       Payload: JSON.stringify(event),
     };
     await lambda.invoke(params).promise();
 
-    // ASSERT
+    // Long poll SQS queue
     const queueParams = {
       QueueUrl: SQS_QUEUE,
       WaitTimeSeconds: 5,
@@ -100,17 +103,9 @@ describe("Integration Testing: Service 1", () => {
     expect(sqs_messages).toHaveSentEventWithSourceEqualTo(
       "custom.service2_event"
     );
-
-    // CLEAN
-    const deleteParams = {
-      QueueUrl: SQS_QUEUE,
-      ReceiptHandle: sqs_messages.Messages[0].ReceiptHandle,
-    };
-    await sqs.deleteMessage(deleteParams).promise();
   });
-  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
   it("service 2 writes the correct data to S3 when correct event pushed to EventBridge", async () => {
-    const filename = `html-file-${uuid()}`;
     await eventBridge
       .putEvents({
         Entries: [
@@ -123,15 +118,18 @@ describe("Integration Testing: Service 1", () => {
         ],
       })
       .promise();
-    await sleep(5000); // wait 10 seconds to allow event to pass (could be substituted for retries on getting the object)
+    await sleep(5000); // wait 5 seconds to allow event to pass
     const params = {
-      Bucket: "sarah-dev-thumbnail-bucket",
+      Bucket: "example-dev-thumbnail-bucket",
       Key: filename,
     };
     const obj = await s3.getObject(params).promise();
     expect(obj.ContentType).toBe("application/octet-stream");
+    // CLEAN
+
+    const purgeParams = {
+      QueueUrl: SQS_QUEUE,
+    };
+    await sqs.purgeQueue(purgeParams).promise();
   });
-  // it.skip("e2e - service 2 writes correct value to DDB when service 1 triggered", async () => {
-  // todo
-  // });
 });
