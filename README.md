@@ -18,7 +18,7 @@ In the root:
 run `./mfa.sh <AWS_PROFILE> <SERIAL_NUMBER> <TOKEN_CODE>`
 
 `<AWS_PROFILE>`   user-profile name, like user-serverless
-`<SERIAL_NUMBER>` e.g. arn:aws:iam::1234:mfa/severless
+`<SERIAL_NUMBER>` e.g. arn:aws:iam::12345:mfa/severless
 `<TOKEN_CODE>`   mfa code from the authenticating device
 
 You will need to run this every 15 minutes as the token will expire
