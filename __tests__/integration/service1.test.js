@@ -1,18 +1,8 @@
 const AWS = require("aws-sdk");
 require("dotenv").config();
-import { v4 as uuid } from "uuid";
+import { sleep, filename, profile, profileArg } from "./utils";
 
-const profileArg = process.argv.filter((x) => x.startsWith("--profile="))[0];
-const profile = profileArg ? profileArg.split("=")[1] : "default";
-const regionArg = process.argv.filter((x) => x.startsWith("--region="))[0];
 let region = "eu-west-2";
-if (regionArg) {
-  region = regionArg.split("=")[1];
-}
-
-const SQS_QUEUE = process.env.SQS_QUEUE_ENDPOINT;
-
-jest.setTimeout(50000); // eventual consistency can taken time...
 
 let creds;
 
@@ -35,14 +25,15 @@ if (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY) {
 AWS.config.credentials = creds;
 AWS.config.region = region;
 
+jest.setTimeout(50000); // eventual consistency can take time
+
+const SQS_QUEUE = process.env.SQS_QUEUE_ENDPOINT;
 const lambda = new AWS.Lambda();
 const sqs = new AWS.SQS();
 const eventBridge = new AWS.EventBridge();
 const s3 = new AWS.S3();
 
-/*
- * Extend jest with EventBridge specific assertions
- */
+// Extend jest with EventBridge specific assertions
 expect.extend({
   toHaveSentEventBridgeMessage(sqsResult) {
     if (sqsResult.Messages) {
@@ -74,11 +65,15 @@ expect.extend({
     }
   },
 });
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-const filename = `html-file-${uuid()}`;
 
 describe("Integration Testing Event Bridge", () => {
+  afterAll(async () => {
+    const purgeParams = {
+      QueueUrl: SQS_QUEUE,
+    };
+    await sqs.purgeQueue(purgeParams).promise();
+  });
+
   it("service 1 emits an event to the correct EventBus when triggered", async () => {
     const event = {
       body: JSON.stringify({
@@ -106,6 +101,7 @@ describe("Integration Testing Event Bridge", () => {
   });
 
   it("service 2 writes the correct data to S3 when correct event pushed to EventBridge", async () => {
+    // inject event onto the event bus
     await eventBridge
       .putEvents({
         Entries: [
@@ -118,18 +114,16 @@ describe("Integration Testing Event Bridge", () => {
         ],
       })
       .promise();
+
     await sleep(5000); // wait 5 seconds to allow event to pass
+
     const params = {
       Bucket: "example-dev-thumbnail-bucket",
       Key: filename,
     };
+
+    // Assert that file was added to the S3 bucket
     const obj = await s3.getObject(params).promise();
     expect(obj.ContentType).toBe("application/octet-stream");
-    // CLEAN
-
-    const purgeParams = {
-      QueueUrl: SQS_QUEUE,
-    };
-    await sqs.purgeQueue(purgeParams).promise();
   });
 });
