@@ -1,4 +1,4 @@
-service: eventbridge-example
+service: event-bridge-example
 
 package:
   exclude:
@@ -24,7 +24,7 @@ provider:
         - "s3:*"
       Resource:
         - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:eventbridge-example-dev-service2
-        - arn:aws:s3:::example-dev-thumbnail-bucket/*
+        - arn:aws:s3:::example-dev-thumbnails-bucket/*
 
 functions:
   service1:
@@ -71,7 +71,7 @@ resources:
     S3Bucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: example-dev-thumbnail-bucket
+        BucketName: example-dev-thumbnails-bucket
 
     EventRole:
       Type: "AWS::IAM::Role"

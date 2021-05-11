@@ -8,7 +8,7 @@ module.exports.handler = async (ctx, event) => {
   const fileContent = fs.readFileSync(filename);
 
   const params = {
-    Bucket: "example-dev-thumbnail-bucket",
+    Bucket: "example-dev-thumbnails-bucket",
     Key: ctx.detail.filename, // File name you want to save as in S3 lol
     Body: fileContent,
   };

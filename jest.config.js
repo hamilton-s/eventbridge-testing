@@ -7,4 +7,5 @@ module.exports = {
   transform: {
     "^.+\\.jsx?$": "babel-jest",
   },
+  "setupFilesAfterEnv": ["sls-test-tools"]
 };
