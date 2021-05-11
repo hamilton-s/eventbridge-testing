@@ -10,7 +10,7 @@ module.exports.handler = async (ctx, _) => {
         Entries: [
           {
             EventBusName: "event-bridge",
-            Source: "custom.service2_event",
+            Source: "order.created",
             DetailType: "example",
             Detail: ctx.body,
           },

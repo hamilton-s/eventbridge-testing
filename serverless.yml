@@ -28,16 +28,16 @@ provider:
 
 functions:
   service1:
-    handler: service1.handler
+    handler: src/createOrder.handler
   service2:
-    handler: service2.handler
+    handler: src/generatePDF.handler
     role: EventRole
     events:
       - eventBridge:
           eventBus: arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/event-bridge
           pattern:
             source:
-              - custom.service2_event
+              - order.created
 
 resources:
   Resources:
@@ -57,7 +57,7 @@ resources:
         EventBusName: event-bridge
         EventPattern:
           source:
-            - custom.service2_event
+            - order.created
         Targets:
           - Id: 1
             Arn:

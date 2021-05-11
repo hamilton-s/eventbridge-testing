@@ -38,9 +38,7 @@ describe("Integration Testing Event Bridge", () => {
     };
     const sqs_messages = await sqs.receiveMessage(queueParams).promise();
     expect(sqs_messages).toHaveSentEventBridgeMessage();
-    expect(sqs_messages).toHaveSentEventWithSourceEqualTo(
-      "custom.service2_event"
-    );
+    expect(sqs_messages).toHaveSentEventWithSourceEqualTo("order.created");
   });
 
   it("service 2 writes the correct data to S3 when correct event pushed to EventBridge", async () => {
@@ -50,7 +48,7 @@ describe("Integration Testing Event Bridge", () => {
         Entries: [
           {
             EventBusName: "event-bridge",
-            Source: "custom.service2_event",
+            Source: "order.created",
             DetailType: "example",
             Detail: JSON.stringify({ filename: filename }),
           },
@@ -67,6 +65,6 @@ describe("Integration Testing Event Bridge", () => {
 
     // Assert that file was added to the S3 bucket
     const obj = await s3.getObject(params).promise();
-    expect(obj.ContentType).toBe("application/octet-stream");
+    expect(obj.ContentType).toBe("application/pdf");
   });
 });
