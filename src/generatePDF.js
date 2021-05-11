@@ -2,15 +2,16 @@
 const AWS = require("aws-sdk");
 const fs = require("fs");
 
-module.exports.handler = async (ctx, event) => {
+module.exports.handler = async (ctx, _) => {
   const s3 = new AWS.S3();
-  const filename = "./index.html";
+  const filename = "src/index.pdf";
   const fileContent = fs.readFileSync(filename);
 
   const params = {
-    Bucket: "example-dev-thumbnails-bucket",
-    Key: ctx.detail.filename, // File name you want to save as in S3 lol
+    Bucket: "example-dev-thumbnail-bucket",
+    Key: ctx.detail.filename,
     Body: fileContent,
+    ContentType: "application/pdf",
   };
 
   try {
