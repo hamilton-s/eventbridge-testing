@@ -2,8 +2,7 @@ const AWS = require("aws-sdk");
 require("dotenv").config();
 import { sleep, filename, profile, profileArg } from "./utils";
 
-import {lambda, sqs, eventBridge, s3} from 'sls-test-tools'
-
+import { lambda, sqs, eventBridge, s3 } from "sls-test-tools";
 
 jest.setTimeout(50000); // eventual consistency can take time
 
@@ -26,7 +25,7 @@ describe("Integration Testing Event Bridge", () => {
 
     // Invoke Lambda Function
     const params = {
-      FunctionName: "eventbridge-example-dev-service1",
+      FunctionName: "event-bridge-example-dev-service1",
       Payload: JSON.stringify(event),
     };
     await lambda.invoke(params).promise();

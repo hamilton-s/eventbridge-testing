@@ -59,14 +59,11 @@ resources:
           source:
             - order.created
         Targets:
-          - Id: 1
+          - Id: '1'
             Arn:
               Fn::GetAtt:
                 - SqsQueue
                 - Arn
-          - Id: 2
-            Arn:
-              Fn::GetAtt: [Service2LambdaFunction, Arn]
 
     S3Bucket:
       Type: AWS::S3::Bucket
@@ -91,3 +88,21 @@ resources:
         ManagedPolicyArns:
           - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
           - arn:aws:iam::aws:policy/AmazonS3FullAccess
+
+    SqsPolicy:
+      Type: AWS::SQS::QueuePolicy
+      Properties:
+        Queues:
+          - !Ref SqsQueue
+        PolicyDocument:
+          Statement:
+            - Action:
+                - "SQS:SendMessage"
+              Effect: "Allow"
+              Resource: !GetAtt SqsQueue.Arn
+              Principal:
+                Service:
+                  - "events.amazonaws.com"
+              Condition:
+                ArnEquals:
+                  aws:SourceArn: !GetAtt EventBridgeRule.Arn
