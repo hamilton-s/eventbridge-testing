@@ -8,7 +8,7 @@ module.exports.handler = async (ctx, _) => {
   const fileContent = fs.readFileSync(filename);
 
   const params = {
-    Bucket: "example-dev-thumbnail-bucket",
+    Bucket: "example-dev-thumbnails-bucket",
     Key: ctx.detail.filename,
     Body: fileContent,
     ContentType: "application/pdf",
