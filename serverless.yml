@@ -41,29 +41,10 @@ functions:
 
 resources:
   Resources:
-    SqsQueue:
-      Type: AWS::SQS::Queue
-      Properties:
-        QueueName: sqsQueue
-
     EventBridge:
       Type: AWS::Events::EventBus
       Properties:
         Name: event-bridge
-
-    EventBridgeRule:
-      Type: AWS::Events::Rule
-      Properties:
-        EventBusName: event-bridge
-        EventPattern:
-          source:
-            - order.created
-        Targets:
-          - Id: '1'
-            Arn:
-              Fn::GetAtt:
-                - SqsQueue
-                - Arn
 
     S3Bucket:
       Type: AWS::S3::Bucket
@@ -88,21 +69,4 @@ resources:
         ManagedPolicyArns:
           - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
           - arn:aws:iam::aws:policy/AmazonS3FullAccess
-
-    SqsPolicy:
-      Type: AWS::SQS::QueuePolicy
-      Properties:
-        Queues:
-          - !Ref SqsQueue
-        PolicyDocument:
-          Statement:
-            - Action:
-                - "SQS:SendMessage"
-              Effect: "Allow"
-              Resource: !GetAtt SqsQueue.Arn
-              Principal:
-                Service:
-                  - "events.amazonaws.com"
-              Condition:
-                ArnEquals:
-                  aws:SourceArn: !GetAtt EventBridgeRule.Arn
+          
