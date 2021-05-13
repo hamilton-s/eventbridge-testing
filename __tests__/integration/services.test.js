@@ -1,19 +1,21 @@
 const AWS = require("aws-sdk");
-require("dotenv").config();
-import { sleep, filename, profile, profileArg } from "./utils";
+import { sleep, filename } from "./utils";
 
-import { lambda, sqs, eventBridge, s3 } from "sls-test-tools";
+import { AWSClient, EventBridge } from "sls-test-tools";
+
+const lambda = new AWSClient.Lambda()
+let eventBridge;
+const s3 = new AWSClient.S3()
 
 jest.setTimeout(50000); // eventual consistency can take time
 
-const SQS_QUEUE = process.env.SQS_QUEUE_ENDPOINT;
-
 describe("Integration Testing Event Bridge", () => {
+  beforeAll(async () => {
+    eventBridge = await EventBridge.build("event-bridge")
+  });
+
   afterAll(async () => {
-    const purgeParams = {
-      QueueUrl: SQS_QUEUE,
-    };
-    await sqs.purgeQueue(purgeParams).promise();
+    await eventBridge.destroy()
   });
 
   it("service 1 emits an event to the correct EventBus when triggered", async () => {
@@ -30,30 +32,15 @@ describe("Integration Testing Event Bridge", () => {
     };
     await lambda.invoke(params).promise();
 
-    // Long poll SQS queue
-    const queueParams = {
-      QueueUrl: SQS_QUEUE,
-      WaitTimeSeconds: 5,
-    };
-    const sqs_messages = await sqs.receiveMessage(queueParams).promise();
-    expect(sqs_messages).toHaveSentEventBridgeMessage();
-    expect(sqs_messages).toHaveSentEventWithSourceEqualTo("order.created");
+    const eventBridgeEvents = await eventBridge.getEvents()
+    expect(eventBridgeEvents).toHaveEvent();
+    expect(eventBridgeEvents).toHaveEventWithSource("order.created");
   });
 
   it("service 2 writes the correct data to S3 when correct event pushed to EventBridge", async () => {
     // inject event onto the event bus
     await eventBridge
-      .putEvents({
-        Entries: [
-          {
-            EventBusName: "event-bridge",
-            Source: "order.created",
-            DetailType: "example",
-            Detail: JSON.stringify({ filename: filename }),
-          },
-        ],
-      })
-      .promise();
+      .publishEvent("order.created", "example", JSON.stringify({ filename: filename }));
 
     await sleep(5000); // wait 5 seconds to allow event to pass
 
