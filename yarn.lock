@@ -6723,8 +6723,10 @@ slash@^3.0.0:
   resolved "https://registry.yarnpkg.com/slash/-/slash-3.0.0.tgz#6539be870c165adbd5240220dbe361f1bc4d4634"
   integrity sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==
 
-"sls-test-tools@file:../sls-test-tools":
-  version "1.0.0-alpha"
+sls-test-tools@^1.0.0-alpha.2:
+  version "1.0.0-alpha.2"
+  resolved "https://registry.yarnpkg.com/sls-test-tools/-/sls-test-tools-1.0.0-alpha.2.tgz#66272b97389d4e3df0f8d6fc73475486aae027d2"
+  integrity sha512-TbW+A6AsO5EPD8PaTRfV4Aiqo2/XW5Ah0UHjLFYUd5Q3J9mgDJgzFl5kQKYsD2Dqc4dILScrPdwxSKQGWza9ag==
   dependencies:
     aws-sdk "^2.711.0"
     import-all.macro "^3.1.0"
